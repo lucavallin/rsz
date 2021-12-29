@@ -1,6 +1,9 @@
 extern crate clap;
+extern crate image;
 
 use clap::{Arg, App};
+use image::GenericImageView;
+use image::imageops::FilterType;
 
 fn main() {
     let matches = App::new("rsz")
@@ -20,13 +23,19 @@ fn main() {
             .index(1))
         .get_matches();
 
-    // Gets a value for config if supplied by user, or defaults to "default.conf"
-    let ratio = matches.value_of("ratio").unwrap_or_default();
-    println!("Value for ratio: {}", ratio);
+    let ratio: f32 = matches.value_of("ratio").unwrap().parse().unwrap();
 
     // Calling .unwrap() is safe here because "INPUT" is required (if "INPUT" wasn't
     // required we could have used an 'if let' to conditionally get the value)
-    println!("Using input file: {}", matches.value_of("INPUT").unwrap());
+    let image_path = matches.value_of("INPUT").unwrap();
 
-    // more program logic goes here...
+    // Use the open function to load an image from a Path.
+    // `open` returns a `DynamicImage` on success.
+    let img = image::open(image_path).unwrap();
+    let (width, height) = img.dimensions();
+
+    let resized = img.resize(width * ratio as u32, height * ratio as u32, FilterType::Nearest);
+
+    // Write the contents of this image to the Writer in PNG format.
+    resized.save("test.png").unwrap();
 }
