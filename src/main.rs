@@ -1,6 +1,7 @@
 extern crate clap;
 extern crate image;
 
+use std::path::Path;
 use clap::{Arg, App};
 use image::GenericImageView;
 use image::imageops::FilterType;
@@ -28,14 +29,20 @@ fn main() {
     // Calling .unwrap() is safe here because "INPUT" is required (if "INPUT" wasn't
     // required we could have used an 'if let' to conditionally get the value)
     let image_path = matches.value_of("INPUT").unwrap();
+    let filename = Path::new(& image_path).file_name().unwrap().to_str().unwrap();
 
     // Use the open function to load an image from a Path.
     // `open` returns a `DynamicImage` on success.
     let img = image::open(image_path).unwrap();
     let (width, height) = img.dimensions();
 
-    let resized = img.resize(width * ratio as u32, height * ratio as u32, FilterType::Nearest);
+    // This cast feels wrong, is there a better solution?
+    let new_width = (width as f32 * ratio).floor() as u32;
+    let new_height = (height as f32 * ratio).floor() as u32;
+
+    let resized = img.resize(new_width, new_height, FilterType::Nearest);
 
     // Write the contents of this image to the Writer in PNG format.
-    resized.save("test.png").unwrap();
+    let new_filename = format!("{}_resized.png", filename);
+    resized.save(new_filename).unwrap();
 }
